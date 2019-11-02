@@ -79,13 +79,13 @@ TEST(networkTest, connect) {
         if ((net.neuron(inhib_idx).is_inhibitory())
             && net.add_link(excit_idx, inhib_idx, stren))
             nlink--;
-    EXPECT_EQ(expec, net.degree(excit_idx));
+    EXPECT_EQ(expec, net.degree(excit_idx));  ///Utilisation de degree()  :  VALIDATION !!!
     std::vector<double> noisev(nlinks, noise);
-    size_t inhib1 = net.neighbors(excit_idx).front().first;
+    size_t inhib1 = net.neighbors(excit_idx).front().first;  ///Utilisation de neighbors()
     int ifirs(0), efirs(0);
 // --- should fire once within 10 time steps
     for (size_t t=0; t<10; t++) {
-        net.step(noisev);
+        net.step(noisev);  ///Utilisation de step()
         ifirs += (int)net.neuron(inhib1).firing();
         efirs += (int)net.neuron(excit_idx).firing();
     }

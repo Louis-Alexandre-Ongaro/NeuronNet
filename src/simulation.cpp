@@ -170,8 +170,8 @@ void Simulation::run() {
     if (outf2.is_open()) net.print_head(ntypes, &outf2);
     int time = 0;
     while (time<endtime) {
-        _RNG->normal(thalinput, 0, thalam);
-        std::set<size_t> firs = net.step(thalinput);
+        _RNG->normal(thalinput, 0, thalam); //donne un vector de chiffres alea a l'aide dist Norm
+        std::set<size_t> firs = net.step(thalinput); // ici net est un Network !!!!!
         time++;
         (*_outf) << time;
         for (size_t nn=0; nn<size; nn++) (*_outf) << " " << firs.count(nn);

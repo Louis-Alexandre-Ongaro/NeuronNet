@@ -1,5 +1,9 @@
 #include "network.h"
 #include "random.h"
+#include <vector>
+#include <map>
+#include <utility>
+
 
 void Network::resize(const size_t &n, double inhib) {
     size_t old = size();
@@ -128,3 +132,91 @@ void Network::print_traj(const int time, const std::map<std::string, size_t> &_n
             }
     (*_out) << std::endl;
 }
+
+std::pair<size_t, double> Network::degree(const size_t& n) const {
+	
+	std::pair<size_t, double> deg;
+	double total_intens(0.0);
+	std::vector<std::pair<size_t, double> > voisinstab(neighbors(n));
+	
+	for(auto neuron : voisinstab){
+		total_intens += neuron.second;
+	}
+	
+	deg.first = voisinstab.size();
+	deg.second = total_intens;
+	
+	return deg;
+};
+
+std::vector<std::pair<size_t, double> > Network::neighbors(const size_t& n) const {
+	
+	std::vector<std::pair<size_t, double> > voisins;
+	
+	std::map<std::pair<size_t, size_t>, double>::const_iterator it;
+	it = links.lower_bound({n, 0});
+	for (auto I = it; I != links.end() and I->first.first == n; ++I) {
+			voisins.push_back({I->first.second, I->second});
+	}
+	
+	/*std::pair<size_t, double> neig;
+	for(auto lien : links) {
+		if(lien.first.first == n) {
+			neig.first = lien.first.second;
+			neig.second = lien.second;
+			voisins.push_back(neig);
+		}
+	}*/
+	
+	return voisins;
+};
+
+std::set<size_t> Network::step(const std::vector<double>& input) {
+	
+	std::set<size_t> firing_neurons;
+	double synap_current;
+	double sum_add;
+	double sum_subtract;
+	std::vector<std::pair<size_t, double> > voisins;
+	std::vector<bool> FiringNeurons;
+	
+	for(size_t i=0; i < neurons.size(); ++i) {
+		if(neurons[i].firing()) {
+			FiringNeurons.push_back(true);
+			neurons[i].reset();
+		} else {
+			FiringNeurons.push_back(false);
+		}
+	}
+	
+	for(size_t i=0; i < neurons.size(); ++i) {
+		voisins = neighbors(i);  //determine quels sont les voisins du neuron n
+		
+		for(auto neur : voisins) {  //determine les sommes excitatrices et inhibitrices
+			if(FiringNeurons[neur.first] == true and neurons[neur.first].is_inhibitory() == 0) {
+				sum_add += neur.second;
+			} else if(FiringNeurons[neur.first] == true and neurons[neur.first].is_inhibitory() == 1) {
+				sum_subtract += neur.second;
+			}
+		}
+		
+		if(neurons[i].is_inhibitory() == 0) {
+			synap_current = input[i] + 0.5*sum_add + sum_subtract;
+		} else if(neurons[i].is_inhibitory() == 1) {
+			synap_current = 0.4*input[i] + 0.5*sum_add + sum_subtract;
+		}
+		
+		neurons[i].input(synap_current); //input du neurone devient synap_current
+		neurons[i].step(); //appelle le step de chaque neurone;
+		
+		if(neurons[i].firing()) {
+			firing_neurons.insert(i);
+		}
+		
+		sum_add = 0.0;
+		sum_subtract = 0.0;
+		synap_current = 0.0;
+	}
+	
+	return firing_neurons;
+};
